@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -17,23 +17,26 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install unzip
-        run: sudo apt-get update && sudo apt-get install -y unzip
+      - name: Install tools
+        run: |
+          sudo apt update
+          sudo apt install unzip gradle -y
 
       - name: Extract ZIP
         run: |
-          unzip "MCPELibImporter-source.zip" -d extracted
-          cd extracted
+          unzip -o "MCPELibImporter-source.zip" -d extracted
 
-          PROJECT_DIR=$(find . -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1 | xargs dirname)
-
-          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-
-      - name: Fix Gradle Wrapper
+      - name: Find Android project
         run: |
-          mkdir -p extracted/$PROJECT_DIR/gradle/wrapper
+          PROJECT_DIR=$(find extracted -name "settings.gradle" | head -n 1 | xargs dirname)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          echo "Found project: $PROJECT_DIR"
 
-          cat > extracted/$PROJECT_DIR/gradle/wrapper/gradle-wrapper.properties << EOF
+      - name: Fix Gradle wrapper
+        run: |
+          mkdir -p $PROJECT_DIR/gradle/wrapper
+
+          cat > $PROJECT_DIR/gradle/wrapper/gradle-wrapper.properties << EOF
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
           zipStoreBase=GRADLE_USER_HOME
@@ -41,16 +44,20 @@ jobs:
           distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-all.zip
           EOF
 
-      - name: Give permission to gradlew
-        run: chmod +x extracted/$PROJECT_DIR/gradlew || true
-
       - name: Build APK
         run: |
-          cd extracted/$PROJECT_DIR
-          ./gradlew assembleDebug --stacktrace
+          cd $PROJECT_DIR
+
+          chmod +x gradlew || true
+
+          if [ -f "gradlew" ]; then
+            ./gradlew assembleDebug || gradle assembleDebug
+          else
+            gradle assembleDebug
+          fi
 
       - name: Find APK
-        run: find . -name "*.apk"
+        run: find extracted -name "*.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
