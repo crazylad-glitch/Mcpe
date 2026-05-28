@@ -32,7 +32,7 @@ jobs:
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
           echo "Project found: $PROJECT_DIR"
 
-      - name: Setup Gradle 8.4
+      - name: Fix Gradle + AndroidX
         run: |
           mkdir -p $PROJECT_DIR/gradle/wrapper
 
@@ -43,6 +43,11 @@ jobs:
           zipStorePath=wrapper/dists
           distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
           EOF
+
+          touch $PROJECT_DIR/gradle.properties
+
+          echo "android.useAndroidX=true" >> $PROJECT_DIR/gradle.properties
+          echo "android.enableJetifier=true" >> $PROJECT_DIR/gradle.properties
 
           cd $PROJECT_DIR
 
