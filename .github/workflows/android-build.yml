@@ -17,20 +17,22 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install unzip
-        run: sudo apt update && sudo apt install unzip -y
+      - name: Install tools
+        run: |
+          sudo apt update
+          sudo apt install unzip wget -y
 
       - name: Extract ZIP
         run: |
           unzip -o "MCPELibImporter-source.zip" -d extracted
 
-      - name: Find project
+      - name: Find Android project
         run: |
           PROJECT_DIR=$(find extracted -name "settings.gradle" | head -n 1 | xargs dirname)
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
           echo "Project found: $PROJECT_DIR"
 
-      - name: Setup Gradle Wrapper 8.2
+      - name: Setup Gradle 8.4
         run: |
           mkdir -p $PROJECT_DIR/gradle/wrapper
 
@@ -39,22 +41,23 @@ jobs:
           distributionPath=wrapper/dists
           zipStoreBase=GRADLE_USER_HOME
           zipStorePath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-bin.zip
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
           EOF
 
           cd $PROJECT_DIR
 
-          wget https://services.gradle.org/distributions/gradle-8.2-bin.zip
-          unzip gradle-8.2-bin.zip
-          chmod +x gradle-8.2/bin/gradle
+          wget https://services.gradle.org/distributions/gradle-8.4-bin.zip
+          unzip -o gradle-8.4-bin.zip
+          chmod +x gradle-8.4/bin/gradle
 
       - name: Build APK
         run: |
           cd $PROJECT_DIR
-
           chmod +x gradlew || true
+          ./gradle-8.4/bin/gradle assembleDebug --stacktrace
 
-          ./gradle-8.2/bin/gradle assembleDebug --stacktrace
+      - name: Find APK
+        run: find extracted -name "*.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
